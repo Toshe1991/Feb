@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 class Company:
 
     # special type of methods, dunder __init__
@@ -16,17 +8,12 @@ class Company:
         self.company_id = company_id
         self.employee_list = []
 
-    def hire(self, employee, position, salary):
-        if salary < Employee.minimum_salary:
-            raise Exception(f"Salary must be equal or over {Employee.minimum_salary}")
+    def make_offer(self, employee, salary, position):
+        if not isinstance(employee, Employee):
+            raise Exception("employee parameter must be of class Employee")
 
-        print(f"{self.name} is hiring {employee.full_name()}")
-
-        employee.position = position
-        employee.salary = salary
-        employee.company = self
-
-        self.employee_list.append(employee)
+        offer = Offer(self, employee, salary, position)
+        offer.send_offer()
 
     def fire(self, employee):
         print(f"{self.name} is firing {employee.full_name()}")
@@ -37,8 +24,14 @@ class Company:
         employee.position = None
         employee.company = None
 
-    # get_salary_costs method
-    # to return total salary cost of a company per month
+    def get_salary_costs(self):
+        # to return total salary cost of a company per month
+        total_salary_costs = 0
+
+        for employee in self.employee_list:
+            total_salary_costs += employee.salary
+
+        return total_salary_costs
 
     def __str__(self):
         # gives you text representation of instaces of the class
@@ -46,7 +39,6 @@ class Company:
 
 
 class Employee:
-    minimum_salary = 18000
 
     def __init__(self, first_name, last_name, email):
         self.first_name = first_name
@@ -57,12 +49,121 @@ class Employee:
         self.position = None
         self.company = None
 
+        self.offers = dict()
+
     def __str__(self):
         # gives you text representation of instaces of the class
         return self.full_name()
 
+    def wake_up_for_work(self, time):
+        print(f"Waking up for work, at: {time}")
+
+    def check_expected_salary(self, salary):
+        if salary < 25000:
+            raise Exception(f"Salary offered {salary} is under expected salary of 25000")
+
+        print("Expected salary is satisfied")
+
+    def receive_offer(self, offer):
+        if not isinstance(offer, Offer):
+            raise Exception(f"{offer} is not an instance of class Offer. Can't process the request.")
+
+        self.offers[offer.company.company_id] = offer
+
+    def accept_offer(self, company):
+        my_offer = self.offers.get(company.company_id)
+
+        if not my_offer:
+            raise Exception(f"No offer found from company {company}")
+
+        self.salary = my_offer.salary
+        self.position = my_offer.position
+        self.company = my_offer.company
+        self.company.employee_list.append(self)
+
+        print(f"{self} has accepted the offer from {company}")
+
+        del self.offers[company.company_id]
+
     def full_name(self):
         return self.first_name + " " + self.last_name
+
+# Class Offer
+# 1. we must define the attributes of the instances created  ///
+# 2. we must create method, or call some method to send the offer to the potential employee  ///
+# 3. validate the instance offer created
+
+class Offer:
+    minimum_salary = 18000
+
+    def __init__(self, company, employee, salary, position):
+        if salary < self.minimum_salary:
+            raise Exception(f"Offer salary must be equal or above minimum salary of {self.minimum_salary}")
+
+        self.company = company
+        self.employee = employee
+        self.salary = salary
+        self.position = position
+
+    def send_offer(self):
+        self.employee.receive_offer(self)
+
+
+class Developer(Employee):
+
+    def __init__(self, first_name, last_name, email):
+        # initialize the parent class
+        # super() function return reference to non-initialied object of parent class
+        super().__init__(first_name, last_name, email)
+        # attribute overwritting
+        self.position = "Software Developer"
+        self.job_risk = "low"
+        self.asset = "develop software solutions"
+
+    def check_expected_salary(self, salary):
+        if salary < 40000:
+            raise Exception(f"Salary offered {salary} is under expected salary of 40000")
+
+        print("Expected salary is satisfied")
+
+class Accountant(Employee):
+
+    def __init__(self, first_name, last_name, email):
+        super().__init__(first_name, last_name, email)
+        self.position = "Accountant"
+        self.job_risk = "low"
+        self.asset = "calculate company financials"
+
+    def wake_up_for_work(self, time):
+        if time.startswith("09") or time.startswith("10") or time.startswith("11"):
+            return super().wake_up_for_work(time)
+
+        raise Exception("I only wake up between 09:00 and 11:00")
+
+
+class PoliceOfficer(Employee):
+
+    def __init__(self):
+        self.position = "Police Officer"
+        self.job_risk = "high"
+        self.asset = "secure society"
+
+
+
+# toshe = Developer("Toshe", "Petrovski", "toshe@gmail.com")
+# print(toshe.salary)
+toshe = Accountant("Toshe", "Petrovski", "toshe@gmail.com")
+toshe.wake_up_for_work("12:30")
+
+# toshe.check_expected_salary(30000)
+
+
+
+
+
+
+
+
 
 
 semos = Company("Semos DOO", "Jane Sandanski", 1234)
@@ -72,10 +173,14 @@ toshe = Employee("Toshe", "Petrovski", "toshe@gmail.com")
 goran = Employee("Goran", "Markovski", "goran@gmail.com")
 vesna = Employee("Vesna", "Markovska", "vesna@yahoo.com")
 
-# semos.hire(vesna, "Senior Software Developer", 17000)
-
-# isinstance(object, class) -> if object is instance of class
-print(isinstance(semos, Employee))
+# semos.make_offer(goran, 50000, "Web Developer")
+# goran.accept_offer(semos)
+#
+# semos.make_offer(vesna, 100000, "Python developer")
+# vesna.accept_offer(semos)
+#
+# print(f"Semos total salary costs per month is: {semos.get_salary_costs()}")
+# # print(semos.employee_list)
 
 # print(f"Name: {vesna.full_name()}, Postion: {vesna.position}, Company: {vesna.company}")
 #
